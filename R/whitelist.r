@@ -9,6 +9,9 @@ whitelist.examples = function() {
 
   wl.funs = parse.whitelist.yaml("D:/libraries/WhitelistEval/WhitelistEval/lists/StratTournWhiteList.yaml")
 
+  txt = paste0("c(",paste0('"',wl.funs,'"',collapse=","),")")
+  writeClipboard(txt)
+
   call = quote({
     eval(1+1)
     base::print
