@@ -4,8 +4,9 @@
 \alias{check.whitelist}
 \title{Check whether a call only calls functions or uses variables that satify a whitelist of allowed symbols}
 \usage{
-check.whitelist(call, wl.funs = NULL, wl.vars = NULL, bl.funs = NULL,
-  bl.vars = NULL, funs = find.funs(call), vars = find.variables(call))
+check.whitelist(call, wl.funs = NULL, wl.vars = NULL, wl.calls = NULL,
+  bl.funs = NULL, bl.vars = NULL, funs = find.funs(call),
+  vars = find.variables(call))
 }
 \arguments{
 \item{call}{the call object}
@@ -13,6 +14,15 @@ check.whitelist(call, wl.funs = NULL, wl.vars = NULL, bl.funs = NULL,
 \item{wl.funs}{a character vector of the function names that are allowed (whitelisted). If NULL ignored.}
 
 \item{wl.vars}{a character vector of the variable names that are allowed (whitelisted). If NULL ignored.}
+
+\item{wl.calls}{a list of explicit calls that are allowed.
+For example, one may not generally whitelist the function 'library'
+(who knows what can happen if a library has functions with the
+same name than some whitelisted function but different behavior)
+Yet one may allow the explicit call
+`library(dplyr)`. In this case, we could set
+ wl.calls = alist(library(dplyr)).
+ DOES NOT YET WORK!}
 
 \item{bl.funs}{a character vector of the function names that are forbidden (blacklisted). If NULL ignored.}
 
@@ -32,6 +42,22 @@ character vectors with the function / variable names.
 Returns a list (ok, fb.funs, fb.vars, msg) where ok is FALSE if a forbidden symbol
 has been found and otherwise TRUE. fb.funs and fb.vars list the forbidden function calls
 or variable names that have been found. msg is a default error message that can be shown
-if the call did not pass the check
+if the call did not pass the check.
 }
 
+\examples{\dontrun{
+
+
+  dir = path.package("WhitelistEval")
+  wl.funs = parse.whitelist.yaml(file.path(dir,"lists/StratTournWhiteList.yaml"))
+  call = quote({
+    eval(1+1)
+    base::print
+    y <<- 5
+    print("Hi")
+    filter(group_by(x,y), a==5)
+    ggplot()
+  })
+  check.whitelist(call, wl.funs = wl.funs)
+
+}}
