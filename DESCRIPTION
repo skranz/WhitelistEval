@@ -1,12 +1,14 @@
 Package: WhitelistEval
 Type: Package
-Title: Checking arbitrary code against whitelist or blacklist
+Title: Checking arbitrary code against a whitelist or a blacklist
 Version: 0.1
 Date: 2015-07-21
 Authors@R: person("Sebastian", "Kranz", email = "sebastian.kranz@uni-ulm.de", role = c("aut", "cre"))
-Description: Checking arbitrary code against whitelist or blacklist.
+Description: Checking arbitrary code against a whitelist or a blacklist.
              Can be helpful to improve security for webapps that allow users to run more
              or less arbitrary code.
 License: GPL >= 2.0
 LazyData: TRUE
 Depends: yaml, codeUtils
+Remote:
+  skranz/codeUtils
