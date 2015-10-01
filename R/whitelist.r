@@ -87,46 +87,11 @@ examples.check.whitelist = function() {
 
 
   check.whitelist(call, wl.funs = wl.funs)
-
   check.whitelist(call, bl.funs="print", wl.calls=alist(print=print("Ok")))
-}
 
-examples.set.call.list.names = function() {
-  set.call.list.names(alist(print(5), x[5], x))
-
-}
-
-set.call.list.names = function(call.list) {
-  restore.point("set.call.list.names")
-  names = lapply(call.list, function(call) {
-    if (length(call)>1) return(call[[1]])
-    as.character(call)
-  })
-  names(call.list) = names
-  call.list
-}
-
-#' Find function calls inside a call object but ignore subcalls listed in ignore.calls
-#'
-#' @param call the call to be analysed
-#' @param ignore.calls a named list of quoted calls. The names must be the function names of the call. Alternatively, ignore.names can be set
-#' @param ignore.names just the function names of the ignore.calls
-find.funs.except = function(call, ignore.calls=NULL, ignore.names=names(ignore.calls)) {
-  if (is.null(ignore.calls)) return(find.funs(call))
-
-
-  if (!is.call(call)) return(NULL)
-  fun.name = as.character(call[1])
-
-  rows = ignore.names == fun.name
-  ignore = any(sapply(ignore.calls[ignore.names == fun.name], identical,y=call))
-  if (ignore) return(NULL)
-
-  sub.names = lapply(call[-1], function(e1) {
-    find.funs.except(e1, ignore.calls=ignore.calls, ignore.names=ignore.names)
-  })
-  names = unique(c(fun.name,unlist(sub.names, use.names=FALSE)))
-  names
+  li = as.expression(list(call, call))
+  check.whitelist(li, wl.funs = wl.funs)
+  check.whitelist(li, bl.funs="print", wl.calls=alist(print=print("Ok")))
 }
 
 #' Check whether a call only calls functions or uses variables that satify a whitelist of allowed symbols
@@ -157,10 +122,20 @@ find.funs.except = function(call, ignore.calls=NULL, ignore.names=names(ignore.c
 #' @param funs by default set to all function calls in call.
 #' @param vars by default set to all variables used in call.
 #' @export
-check.whitelist = function(call, wl.funs=NULL,wl.vars=NULL, wl.calls=NULL, bl.funs=NULL, bl.vars=NULL, funs = find.funs.except(call, ignore.calls=wl.calls), vars=find.variables(call)) {
+check.whitelist = function(call, wl.funs=NULL,wl.vars=NULL, wl.calls=NULL, bl.funs=NULL, bl.vars=NULL) {
+
   if (is(call, "expression")) {
-    warning("check.whitelist has been called with an expression object instead of a quoted call.")
+    call = as.list(call)
   }
+
+  if (is.list(call)) {
+    funs = unique(unlist(lapply(call, find.funs.except, ignore.calls=wl.calls)))
+    vars= unique(unlist(lapply(call, find.variables)))
+  } else {
+    funs = find.funs.except(call,ignore.calls=wl.calls)
+    vars = find.variables(call)
+  }
+
 
   if (!is.null(wl.calls)) {
     if (is.null(names(wl.calls))) stop("wl.calls must be a named list with the names equal to the function names of the calls. Call set.call.list.names on it first.")
