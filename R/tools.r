@@ -5,7 +5,7 @@ examples.set.call.list.names = function() {
 }
 
 set.call.list.names = function(call.list) {
-  restore.point("set.call.list.names")
+  #restore.point("set.call.list.names")
   names = lapply(call.list, function(call) {
     if (length(call)>1) return(call[[1]])
     as.character(call)
@@ -43,4 +43,35 @@ find.funs.except = function(call, ignore.calls=NULL, ignore.names=names(ignore.c
   })
   names = unique(c(fun.name,unlist(sub.names, use.names=FALSE)))
   names
+}
+
+#' Like find.funs.except but also works if call is a (nested) list of calls or an expression
+robust.find.funs.except = function(call, ignore.calls=NULL, ignore.names=names(ignore.calls)) {
+  if (is.expression(call))
+    call = as.list(call)
+  if (is.list(call)) {
+    return(unique(unlist(lapply(call,robust.find.funs.except,ignore.calls=ignore.calls, ignore.names=names(ignore.calls) ))))
+  }
+
+  find.funs.except(call, ignore.calls=ignore.calls,ignore.names = ignore.names)
+}
+
+#' Like find.funs but also works if call is a (nested) list of calls or an expression
+robust.find.funs = function(call) {
+  if (is.expression(call))
+    call = as.list(call)
+  if (is.list(call)) {
+    return(unique(unlist(lapply(call,robust.find.funs ))))
+  }
+  find.funs(call)
+}
+
+#' Like find.variables but also works if call is a (nested) list of calls or an expression
+robust.find.variables = function(call) {
+  if (is.expression(call))
+    call = as.list(call)
+  if (is.list(call)) {
+    return(unique(unlist(lapply(call,robust.find.variables ))))
+  }
+  find.variables(call)
 }

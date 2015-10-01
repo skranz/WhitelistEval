@@ -121,18 +121,10 @@ examples.check.whitelist = function() {
 #' @param bl.vars a character vector of the variable names that are forbidden  (blacklisted). If NULL ignored.
 #' @export
 check.whitelist = function(call, wl.funs=NULL,wl.vars=NULL, wl.calls=NULL, bl.funs=NULL, bl.vars=NULL) {
+  #restore.point("check.whitelist")
 
-  if (is(call, "expression")) {
-    call = as.list(call)
-  }
-
-  if (is.list(call)) {
-    funs = unique(unlist(lapply(call, find.funs.except, ignore.calls=wl.calls)))
-    vars= unique(unlist(lapply(call, find.variables)))
-  } else {
-    funs = find.funs.except(call,ignore.calls=wl.calls)
-    vars = find.variables(call)
-  }
+  funs = robust.find.funs.except(call,ignore.calls=wl.calls)
+  vars = robust.find.variables(call)
 
 
   if (!is.null(wl.calls)) {
@@ -209,8 +201,8 @@ whitelist.eval = function(expr,
 
 
 #' A synoym for check.whitelist with different order of the arguments
-check.blacklist = function(call, bl.funs=NULL,bl.vars=NULL, wl.funs=NULL, wl.vars=NULL, funs = find.funs(call), vars=find.variables(call)) {
-  check.whitelist(call=call, bl.funs=bl.funs, bl.vars=bl.vars, wl.funs=wl.funs, wl.vars0=wl.vars, funs=funs, vars=vars)
+check.blacklist = function(call, bl.funs=NULL,bl.vars=NULL, wl.funs=NULL, wl.vars=NULL, wl.calls=NULL) {
+  check.whitelist(call=call, bl.funs=bl.funs, bl.vars=bl.vars, wl.funs=wl.funs, wl.vars=wl.var, wl.calls=wl.calls)
 }
 
 #' Parse a whitlist yaml file and return it as a character vector
