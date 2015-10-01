@@ -119,8 +119,6 @@ examples.check.whitelist = function() {
 #'  wl.calls = alist(library=library(dplyr)).
 #' @param bl.funs a character vector of the function names that are forbidden (blacklisted). If NULL ignored.
 #' @param bl.vars a character vector of the variable names that are forbidden  (blacklisted). If NULL ignored.
-#' @param funs by default set to all function calls in call.
-#' @param vars by default set to all variables used in call.
 #' @export
 check.whitelist = function(call, wl.funs=NULL,wl.vars=NULL, wl.calls=NULL, bl.funs=NULL, bl.vars=NULL) {
 

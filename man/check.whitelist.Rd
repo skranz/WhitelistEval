@@ -5,8 +5,7 @@
 \title{Check whether a call only calls functions or uses variables that satify a whitelist of allowed symbols}
 \usage{
 check.whitelist(call, wl.funs = NULL, wl.vars = NULL, wl.calls = NULL,
-  bl.funs = NULL, bl.vars = NULL, funs = find.funs.except(call,
-  ignore.calls = wl.calls), vars = find.variables(call))
+  bl.funs = NULL, bl.vars = NULL)
 }
 \arguments{
 \item{call}{the call object}
@@ -27,10 +26,6 @@ Yet one may allow the explicit call
 \item{bl.funs}{a character vector of the function names that are forbidden (blacklisted). If NULL ignored.}
 
 \item{bl.vars}{a character vector of the variable names that are forbidden  (blacklisted). If NULL ignored.}
-
-\item{funs}{by default set to all function calls in call.}
-
-\item{vars}{by default set to all variables used in call.}
 }
 \description{
 The function extracts in a nested fashion all names of called functions and used variables
@@ -63,6 +58,9 @@ if the call did not pass the check.
 
 
   check.whitelist(call, wl.funs = wl.funs)
-
   check.whitelist(call, bl.funs="print", wl.calls=alist(print=print("Ok")))
+
+  li = as.expression(list(call, call))
+  check.whitelist(li, wl.funs = wl.funs)
+  check.whitelist(li, bl.funs="print", wl.calls=alist(print=print("Ok")))
 }}
