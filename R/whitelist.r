@@ -22,6 +22,27 @@ whitelist.examples = function() {
   })
   check.whitelist(call, wl.funs = wl.funs)
 
+
+  # Let us perform some speed tests
+  funs =find.funs(call)
+  funs = rep(funs, times=10)
+
+  library(microbenchmark)
+  library(data.table)
+
+  wl.funs = c(1:10000, wl.funs)
+
+  funs[1] = "dfndgfzfirnfne"
+  dt = data.table(wl.funs=wl.funs, ind=seq_along(wl.funs), key="wl.funs")
+  microbenchmark(
+    match(funs, wl.funs),
+    funs %in% wl.funs,
+    funs %chin% wl.funs,
+    find.funs(call),
+    dt[funs, ind],
+    which(is.na(dt[funs, ind]))
+
+  )
 }
 
 examples.cat.pkg.funs = function() {
@@ -57,14 +78,56 @@ examples.check.whitelist = function() {
     eval(1+1)
     base::print
     y <<- 5
-    print("Hi")
+   # print("Hi")
+    print("Ok")
     filter(group_by(x,y), a==5)
     ggplot()
   })
+
+
+
   check.whitelist(call, wl.funs = wl.funs)
+
+  check.whitelist(call, bl.funs="print", wl.calls=alist(print=print("Ok")))
+}
+
+examples.set.call.list.names = function() {
+  set.call.list.names(alist(print(5), x[5], x))
 
 }
 
+set.call.list.names = function(call.list) {
+  restore.point("set.call.list.names")
+  names = lapply(call.list, function(call) {
+    if (length(call)>1) return(call[[1]])
+    as.character(call)
+  })
+  names(call.list) = names
+  call.list
+}
+
+#' Find function calls inside a call object but ignore subcalls listed in ignore.calls
+#'
+#' @param call the call to be analysed
+#' @param ignore.calls a named list of quoted calls. The names must be the function names of the call. Alternatively, ignore.names can be set
+#' @param ignore.names just the function names of the ignore.calls
+find.funs.except = function(call, ignore.calls=NULL, ignore.names=names(ignore.calls)) {
+  if (is.null(ignore.calls)) return(find.funs(call))
+
+
+  if (!is.call(call)) return(NULL)
+  fun.name = as.character(call[1])
+
+  rows = ignore.names == fun.name
+  ignore = any(sapply(ignore.calls[ignore.names == fun.name], identical,y=call))
+  if (ignore) return(NULL)
+
+  sub.names = lapply(call[-1], function(e1) {
+    find.funs.except(e1, ignore.calls=ignore.calls, ignore.names=ignore.names)
+  })
+  names = unique(c(fun.name,unlist(sub.names, use.names=FALSE)))
+  names
+}
 
 #' Check whether a call only calls functions or uses variables that satify a whitelist of allowed symbols
 #'
@@ -81,20 +144,28 @@ examples.check.whitelist = function() {
 #' @param call the call object
 #' @param wl.funs a character vector of the function names that are allowed (whitelisted). If NULL ignored.
 #' @param wl.vars a character vector of the variable names that are allowed (whitelisted). If NULL ignored.
-#' @param wl.calls a list of explicit calls that are allowed.
+#' @param wl.calls a named list of quoted calls that are allowed.
+#' The list names should be the call names, i.e. call[[1]].
 #' For example, one may not generally whitelist the function 'library'
 #' (who knows what can happen if a library has functions with the
 #' same name than some whitelisted function but different behavior)
 #' Yet one may allow the explicit call
 #' `library(dplyr)`. In this case, we could set
-#'  wl.calls = alist(library(dplyr)).
-#'  DOES NOT YET WORK!
+#'  wl.calls = alist(library=library(dplyr)).
 #' @param bl.funs a character vector of the function names that are forbidden (blacklisted). If NULL ignored.
 #' @param bl.vars a character vector of the variable names that are forbidden  (blacklisted). If NULL ignored.
 #' @param funs by default set to all function calls in call.
 #' @param vars by default set to all variables used in call.
 #' @export
-check.whitelist = function(call, wl.funs=NULL,wl.vars=NULL, wl.calls=NULL, bl.funs=NULL, bl.vars=NULL, funs = find.funs(call), vars=find.variables(call)) {
+check.whitelist = function(call, wl.funs=NULL,wl.vars=NULL, wl.calls=NULL, bl.funs=NULL, bl.vars=NULL, funs = find.funs.except(call, ignore.calls=wl.calls), vars=find.variables(call)) {
+  if (is(call, "expression")) {
+    warning("check.whitelist has been called with an expression object instead of a quoted call.")
+  }
+
+  if (!is.null(wl.calls)) {
+    if (is.null(names(wl.calls))) stop("wl.calls must be a named list with the names equal to the function names of the calls. Call set.call.list.names on it first.")
+  }
+
   fb.funs = NULL
   fb.vars = NULL
   msg = ""
@@ -115,7 +186,14 @@ check.whitelist = function(call, wl.funs=NULL,wl.vars=NULL, wl.calls=NULL, bl.fu
 
   if (length(fb.funs)>0) {
     ok = FALSE
-    msg = paste0(msg,"For security reasons, it is not allowed to call the following functions:\n",paste0(fb.funs,collapse=", "),"\n")
+    in.wl.calls = fb.funs %in% names(wl.calls)
+
+    if (any(!in.wl.calls)) {
+      msg = paste0(msg,"For security reasons, it is not allowed to call the following functions:\n",paste0(fb.funs[!in.wl.calls],collapse=", "),"\n")
+    }
+    if (any(in.wl.calls)) {
+      msg = paste0(msg,"For security reasons, the following functions can only be called in a restriced way. You called them in a forbidden form:\n",paste0(fb.funs[in.wl.calls],collapse=", "),"\n")
+    }
   }
   if (length(fb.vars)>0) {
     ok = FALSE

@@ -5,8 +5,8 @@
 \title{Check whether a call only calls functions or uses variables that satify a whitelist of allowed symbols}
 \usage{
 check.whitelist(call, wl.funs = NULL, wl.vars = NULL, wl.calls = NULL,
-  bl.funs = NULL, bl.vars = NULL, funs = find.funs(call),
-  vars = find.variables(call))
+  bl.funs = NULL, bl.vars = NULL, funs = find.funs.except(call,
+  ignore.calls = wl.calls), vars = find.variables(call))
 }
 \arguments{
 \item{call}{the call object}
@@ -15,14 +15,14 @@ check.whitelist(call, wl.funs = NULL, wl.vars = NULL, wl.calls = NULL,
 
 \item{wl.vars}{a character vector of the variable names that are allowed (whitelisted). If NULL ignored.}
 
-\item{wl.calls}{a list of explicit calls that are allowed.
+\item{wl.calls}{a named list of quoted calls that are allowed.
+The list names should be the call names, i.e. call[[1]].
 For example, one may not generally whitelist the function 'library'
 (who knows what can happen if a library has functions with the
 same name than some whitelisted function but different behavior)
 Yet one may allow the explicit call
 `library(dplyr)`. In this case, we could set
- wl.calls = alist(library(dplyr)).
- DOES NOT YET WORK!}
+ wl.calls = alist(library=library(dplyr)).}
 
 \item{bl.funs}{a character vector of the function names that are forbidden (blacklisted). If NULL ignored.}
 
@@ -54,10 +54,15 @@ if the call did not pass the check.
     eval(1+1)
     base::print
     y <<- 5
-    print("Hi")
+   # print("Hi")
+    print("Ok")
     filter(group_by(x,y), a==5)
     ggplot()
   })
+
+
+
   check.whitelist(call, wl.funs = wl.funs)
 
+  check.whitelist(call, bl.funs="print", wl.calls=alist(print=print("Ok")))
 }}
